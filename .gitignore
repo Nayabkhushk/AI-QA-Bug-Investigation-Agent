@@ -10,30 +10,17 @@ __pycache__/
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
 
 # Virtual environments
-venv/
 .venv/
-ENV/
+venv/
 env/
 
-# Vector database local storage
-chroma_db/
-.chroma/
+# FAISS index (built locally by ingest.py — not committed)
+faiss_index/
 
 # Testing & Cache
 .pytest_cache/

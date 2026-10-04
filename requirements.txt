@@ -1,0 +1,15 @@
+# Core embedding + vector search (local, no internet at runtime)
+faiss-cpu>=1.7.0
+sentence-transformers>=3.0.0
+
+# Document & Metadata Parsing
+pyyaml>=6.0
+
+# Environment Management
+python-dotenv>=1.0.0
+
+# Agent Framework
+crewai>=0.80.0
+
+# Testing
+pytest>=8.0.0
