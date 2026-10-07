@@ -204,9 +204,9 @@ class HybridRetriever:
             'dense_rank', and 'bm25_rank'.
         """
         # Guard clause for empty query
-if not query or not query.strip():
-    return []
-# Fetch candidate pools from both retrievers
+        if not query or not query.strip():
+            return []
+        # Fetch candidate pools from both retrievers        
         candidate_k = max(top_k * 2, 20)
         dense_results = self.dense_search(
             query=query,
