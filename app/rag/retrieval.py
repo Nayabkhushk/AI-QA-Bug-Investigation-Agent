@@ -6,9 +6,13 @@ using Reciprocal Rank Fusion (RRF) to retrieve the most relevant evidence chunks
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import math
 import re
+import time
 from collections import Counter
+from pathlib import Path
 from typing import Any
 
 from app.rag.vector_store import FAISSVectorStore
@@ -130,6 +134,107 @@ class BM25Index:
 
 
 # ---------------------------------------------------------------------------
+# Query/Result Cache with TTL and Index-Change Invalidation
+# ---------------------------------------------------------------------------
+class RetrievalCache:
+    """Simple in-memory cache for retrieval results.
+
+    Cached entries expire after ``ttl_seconds``.  The entire cache is
+    automatically invalidated when the FAISS index file on disk is
+    modified (detected via file modification time), ensuring stale
+    results are never served after a knowledge-base rebuild.
+    """
+
+    def __init__(
+        self,
+        max_size: int = 100,
+        ttl_seconds: float = 300.0,
+        index_dir: str = "./faiss_index",
+    ):
+        self._store: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+        self._max_size = max_size
+        self._ttl = ttl_seconds
+        self._index_path = Path(index_dir) / "index.faiss"
+        self._index_mtime: float = self._get_index_mtime()
+
+    # -- public API ----------------------------------------------------------
+
+    def get(
+        self,
+        query: str,
+        top_k: int,
+        module: str | None,
+        document_type: str | None,
+        alpha: float,
+    ) -> list[dict[str, Any]] | None:
+        """Return cached results or ``None`` on miss / expiry / invalidation."""
+        # Invalidate entire cache if the index file changed on disk
+        current_mtime = self._get_index_mtime()
+        if current_mtime != self._index_mtime:
+            self.clear()
+            self._index_mtime = current_mtime
+            return None
+
+        key = self._make_key(query, top_k, module, document_type, alpha)
+        if key not in self._store:
+            return None
+
+        timestamp, results = self._store[key]
+        if time.time() - timestamp > self._ttl:
+            del self._store[key]
+            return None
+
+        # Return a deep copy so callers cannot mutate cached data
+        return copy.deepcopy(results)
+
+    def put(
+        self,
+        query: str,
+        top_k: int,
+        module: str | None,
+        document_type: str | None,
+        alpha: float,
+        results: list[dict[str, Any]],
+    ) -> None:
+        """Store results in the cache (deep-copied to prevent mutation)."""
+        if len(self._store) >= self._max_size:
+            # Evict the oldest entry
+            oldest_key = min(self._store, key=lambda k: self._store[k][0])
+            del self._store[oldest_key]
+
+        key = self._make_key(query, top_k, module, document_type, alpha)
+        self._store[key] = (time.time(), copy.deepcopy(results))
+
+    def clear(self) -> None:
+        """Remove all cached entries."""
+        self._store.clear()
+
+    def size(self) -> int:
+        """Return the number of cached entries."""
+        return len(self._store)
+
+    # -- private helpers -----------------------------------------------------
+
+    def _get_index_mtime(self) -> float:
+        """Return the FAISS index file's modification time, or 0 if missing."""
+        if self._index_path.exists():
+            return self._index_path.stat().st_mtime
+        return 0.0
+
+    def _make_key(
+        self,
+        query: str,
+        top_k: int,
+        module: str | None,
+        document_type: str | None,
+        alpha: float,
+    ) -> str:
+        """Deterministic hash key from all query parameters."""
+        raw = f"{query}|{top_k}|{module}|{document_type}|{alpha}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------------------
 # Hybrid Retriever (Dense FAISS + Sparse BM25 + Reciprocal Rank Fusion)
 # ---------------------------------------------------------------------------
 class HybridRetriever:
@@ -144,10 +249,18 @@ class HybridRetriever:
         vector_store: FAISSVectorStore | None = None,
         index_dir: str = "./faiss_index",
         rrf_k: int = 60,
+        cache_max_size: int = 100,
+        cache_ttl_seconds: float = 300.0,
     ):
         self.vector_store = vector_store or FAISSVectorStore(index_dir=index_dir)
         self.bm25 = BM25Index(corpus=self.vector_store.metadata)
         self.rrf_k = rrf_k
+        self._cache = RetrievalCache(
+            max_size=cache_max_size,
+            ttl_seconds=cache_ttl_seconds,
+            index_dir=index_dir,
+        )
+        self.last_retrieval_metrics: dict[str, Any] = {}
 
     def dense_search(
         self,
@@ -202,24 +315,56 @@ class HybridRetriever:
         Returns:
             Ranked list of merged chunk dictionaries with 'hybrid_score',
             'dense_rank', and 'bm25_rank'.
+
+        Side effect:
+            Updates ``self.last_retrieval_metrics`` with latency measurements,
+            cache hit status, and result count.
         """
         # Guard clause for empty query
         if not query or not query.strip():
+            self.last_retrieval_metrics = {
+                "dense_latency_ms": 0.0,
+                "sparse_latency_ms": 0.0,
+                "total_latency_ms": 0.0,
+                "cache_hit": False,
+                "result_count": 0,
+            }
             return []
-        # Fetch candidate pools from both retrievers        
+
+        # ---- Check cache first ------------------------------------------------
+        cached = self._cache.get(query, top_k, module, document_type, alpha)
+        if cached is not None:
+            self.last_retrieval_metrics = {
+                "dense_latency_ms": 0.0,
+                "sparse_latency_ms": 0.0,
+                "total_latency_ms": 0.0,
+                "cache_hit": True,
+                "result_count": len(cached),
+            }
+            return cached
+
+        # ---- Timed retrieval --------------------------------------------------
+        total_start = time.perf_counter()
+
         candidate_k = max(top_k * 2, 20)
+
+        dense_start = time.perf_counter()
         dense_results = self.dense_search(
             query=query,
             top_k=candidate_k,
             module=module,
             document_type=document_type,
         )
+        dense_ms = (time.perf_counter() - dense_start) * 1000
+
+        sparse_start = time.perf_counter()
         sparse_results = self.sparse_search(
             query=query,
             top_k=candidate_k,
             module=module,
             document_type=document_type,
         )
+        sparse_ms = (time.perf_counter() - sparse_start) * 1000
 
         # Merge candidate pools with Reciprocal Rank Fusion
         merged_scores: dict[str, float] = {}
@@ -254,5 +399,19 @@ class HybridRetriever:
             chunk["hybrid_score"] = round(merged_scores[cid], 6)
             chunk["hybrid_rank"] = rank
             final_results.append(chunk)
+
+        total_ms = (time.perf_counter() - total_start) * 1000
+
+        # ---- Store in cache ---------------------------------------------------
+        self._cache.put(query, top_k, module, document_type, alpha, final_results)
+
+        # ---- Record retrieval metrics -----------------------------------------
+        self.last_retrieval_metrics = {
+            "dense_latency_ms": round(dense_ms, 2),
+            "sparse_latency_ms": round(sparse_ms, 2),
+            "total_latency_ms": round(total_ms, 2),
+            "cache_hit": False,
+            "result_count": len(final_results),
+        }
 
         return final_results

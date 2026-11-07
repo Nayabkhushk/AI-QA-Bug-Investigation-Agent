@@ -1,0 +1,155 @@
+[
+  {
+    "query": "How does the authentication login endpoint work and which token is returned?",
+    "relevant_docs": [
+      "data/api_docs/API-AUTH-001.md",
+      "data/requirements/AUTH-REQ-001.md"
+    ]
+  },
+  {
+    "query": "What fields are required to create a new ticket via the API?",
+    "relevant_docs": [
+      "data/api_docs/API-TICKETS-001.md",
+      "data/requirements/TICK-REQ-001.md"
+    ]
+  },
+  {
+    "query": "Describe the MFA challenge flow for user login.",
+    "relevant_docs": [
+      "data/requirements/AUTH-REQ-001.md"
+    ]
+  },
+  {
+    "query": "Which bug report documents mention a failure when creating a ticket?",
+    "relevant_docs": [
+      "data/bugs/BUG-102.md",
+      "data/bugs/BUG-147.md"
+    ]
+  },
+  {
+    "query": "What are the acceptance criteria for the payment API regarding error handling?",
+    "relevant_docs": [
+      "data/api_docs/API-PAYMENTS-001.md",
+      "data/requirements/PAY-REQ-001.md"
+    ]
+  },
+  {
+    "query": "Show the test case that validates token expiration after 15 minutes.",
+    "relevant_docs": [
+      "data/test_cases/TC-AUTH-001.md"
+    ]
+  },
+  {
+    "query": "List any QA guidelines that address handling of duplicate tickets.",
+    "relevant_docs": [
+      "data/qa_guidelines/QA-GUIDE-002.md"
+    ]
+  },
+  {
+    "query": "Explain the process for resetting a user's password via the API.",
+    "relevant_docs": [
+      "data/api_docs/API-AUTH-001.md"
+    ]
+  },
+  {
+    "query": "Which documents describe the required fields for a call record creation?",
+    "relevant_docs": [
+      "data/api_docs/API-CALLS-001.md",
+      "data/requirements/CALL-REQ-001.md"
+    ]
+  },
+  {
+    "query": "What is the SLA for priority‑5 tickets?",
+    "relevant_docs": []
+  },
+  {
+    "query": "Find evidence of a bug where MFA verification times out.",
+    "relevant_docs": [
+      "data/bugs/BUG-118.md"
+    ]
+  },
+  {
+    "query": "Which test case covers the scenario of a failed payment due to insufficient funds?",
+    "relevant_docs": [
+      "data/test_cases/TC-PAY-005.md"
+    ]
+  },
+  {
+    "query": "What tags are associated with the ticket creation requirement?",
+    "relevant_docs": [
+      "data/requirements/TICK-REQ-001.md"
+    ]
+  },
+  {
+    "query": "Identify all documents that reference the HTTP status code 401.",
+    "relevant_docs": [
+      "data/api_docs/API-AUTH-001.md",
+      "data/bugs/BUG-155.md"
+    ]
+  },
+  {
+    "query": "How does the system store active sessions in Redis?",
+    "relevant_docs": [
+      "data/requirements/AUTH-REQ-001.md"
+    ]
+  },
+  {
+    "query": "Which bug report includes steps to reproduce a ticket duplication issue?",
+    "relevant_docs": [
+      "data/bugs/BUG-124.md"
+    ]
+  },
+  {
+    "query": "Show the QA guideline that defines the naming convention for error codes.",
+    "relevant_docs": [
+      "data/qa_guidelines/QA-GUIDE-001.md"
+    ]
+  },
+  {
+    "query": "What is the recommended authentication module for new integrations?",
+    "relevant_docs": [
+      "data/requirements/AUTH-REQ-002.md"
+    ]
+  },
+  {
+    "query": "List all documents that mention the term 'session_id'.",
+    "relevant_docs": [
+      "data/requirements/AUTH-REQ-001.md",
+      "data/bugs/BUG-162.md"
+    ]
+  },
+  {
+    "query": "How are notification emails triggered after a ticket is closed?",
+    "relevant_docs": [
+      "data/api_docs/API-USER-001.md"
+    ]
+  },
+  {
+    "query": "Which test case validates the call creation endpoint with missing required fields?",
+    "relevant_docs": [
+      "data/test_cases/TC-CALL-002.md"
+    ]
+  },
+  {
+    "query": "Is there any documentation about handling of unknown error codes?",
+    "relevant_docs": []
+  },
+  {
+    "query": "What modules are listed under the requirements for the payment feature?",
+    "relevant_docs": [
+      "data/requirements/PAY-REQ-001.md"
+    ]
+  },
+  {
+    "query": "Explain the process for exporting ticket data to CSV.",
+    "relevant_docs": [
+      "data/api_docs/API-TICKETS-001.md"
+    ]
+  },
+  {
+    "query": "Which bug report describes a race condition in authentication token refresh?",
+    "relevant_docs": [
+      "data/bugs/BUG-188.md"
+    ]
+  }
+]
