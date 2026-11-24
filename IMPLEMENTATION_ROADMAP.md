@@ -157,7 +157,7 @@ Key tasks:
 - Capture LLM latency.
 - Collect the information required for estimated cost per query.
 
-**Status:** Pending.
+**Status:** Completed.
 
 ---
 
@@ -189,7 +189,7 @@ Key tasks:
 - Centralize error handling and debugging logs.
 - Ensure that the agent cannot bypass evidence-grounding rules.
 
-**Status:** Pending.
+**Status:** Completed.
 
 ---
 
@@ -211,7 +211,7 @@ Key tasks:
 - Associate investigation steps and relevant logs with that trace ID.
 - Keep memory behaviour predictable and limited to the current investigation.
 
-**Status:** Pending.
+**Status:** Completed.
 
 ---
 
@@ -235,7 +235,7 @@ Key tasks:
 - Check that source references match retrieved documents.
 - Test validation against unsupported or fabricated claims.
 
-**Status:** Pending.
+**Status:** Completed.
 
 ---
 
@@ -259,7 +259,7 @@ Key tasks:
 - Display useful investigation metrics where appropriate.
 - Display trace ID for investigation tracking.
 
-**Status:** Pending.
+**Status:** Completed.
 
 **Note:** Final frontend technology and UI implementation details should follow the confirmed project decision.
 
@@ -292,7 +292,7 @@ Key tasks:
 - Verify cache invalidation.
 - Test insufficient-evidence and unsupported-claim scenarios.
 
-**Status:** Pending.
+**Status:** Completed.
 
 ---
 
